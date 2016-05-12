@@ -25,8 +25,15 @@ A standard principle of programming is DRY - Don't Repeat Yourself [ref]. Under 
 
 S3 methods in the R programming language are a way of writing functions in R that do different things for objects of different classes. S3 methods are so named as the methods shipped with the release of the third version of the "S" programming language, which R was heavily based upon [reference]. Hence, methods for S 3.0 = S3 Methods.
 
-The function `summary()` is an S3 method. When applied to an object of class "dataframe", `summary` shows descriptive statistics (Mean, SD, etc.) for each variable: 
+The function `summary()` is an S3 method. When applied to an object of class `data.frame`, `summary` shows descriptive statistics (Mean, SD, etc.) for each variable. For example, `iris` is of class `data.frame`:
 
+```{r}
+
+class(iris)
+
+```
+
+So applying `summary` to `iris` gives us summary information relevant to a dataframe
 
 ```{r }
 
@@ -34,7 +41,17 @@ summary(iris)
 
 ```
 
-`summary` also performs differently when applied to different object, take a linear model, for example:
+`summary` also performs differently when applied to different object. In fact, you can find all the classes that work with an S3 method by typing the following:
+
+```{r}
+
+methods(summary)
+
+```
+
+There's over 40 different methods!
+
+We can use summary on a linear model, for example:
 
 ```{r}
 
@@ -105,16 +122,27 @@ summary.data.frame(lm_iris)
 
 However the output may be a bit confusing.
 
-To summarize, the important feature of S3 methods worth noting is that only the **first part**, `summary`, is required to be used on these objects of different classes.  If you would like to find all of the different classes an S3 method operates on, use the command,
-`methods(summary)`.
+To summarize, the important feature of S3 methods worth noting is that only the **first part**, `summary`, is required to be used on these objects of different classes.
 
 # Why hide the text?
 
-Hiding the trailing text after the `.` avoids the need to use a different `summary` function for every class. This means that one does not need to remember to use `summary.lm` for linear models, or `summary.data.frame` for data frames, or `summary.aProposterousClassOfObject`. By using S3 methods, cognitive load is reduced -  you don't have to think as much to remember what class an object is - and the commands are more intuitive. To get a summary of most objects, use `summary`, to plot most objects, use `plot`. Perhaps the most nifty feature of all is that a user can create their own S3 methods using the same functions such as `summary` and `plot`. This means a user can create their own special class of object and then write their own S3 method for it - e.g., `summary.myclass` or `plot.myclass`, each proiding appropriate summary information, or nice plots, for that object.
+Hiding the trailing text after the `.` avoids the need to use a different `summary` function for every class. This means that one does not need to remember to use `summary.lm` for linear models, or `summary.data.frame` for data frames, or `summary.aProposterousClassOfObject`. By using S3 methods, cognitive load is reduced -  you don't have to think as much to remember what class an object is - and the commands are more intuitive. To get a summary of most objects, use `summary`, to plot most objects, use `plot`. Perhaps the most nifty feature of all is that a user can create their own S3 methods using the same functions such as `summary` and `plot`. This means a user can create their own special class of object
+
+```{r}
+
+test_class <- 1:10
+
+class(test_class) <- "myclass"
+
+class(test_class)
+```
+
+
+and then write their own S3 method for it - e.g., `summary.myclass` or `plot.myclass`, each proiding appropriate summary information, or nice plots, for that object.
 
 # How to make your own S3 method?
 
-Creating your own S3 method is not particularly difficult and is often highly practical. A use case scenario for creating an S3 method is now discussed.
+Creating your own S3 method is not particularly difficult and is usually highly practical. A use case scenario for creating an S3 method is now discussed.
 
 The Residual Sums of Squares (RSS), $\sum(Y_i - \hat{Y})^2$ is a useful metric for determining model accuracy for continuous outcomes. For example, for a Classification and Regression Tree
 
@@ -149,7 +177,7 @@ rss(fit.rpart)
 
 ```
 
-However, what to do when there are many different decision tree models that one would like to compare, say boosted regression trees (BRT), and random forests (RF). The same code will not work:
+However, there are many different decision tree models that one would like to compare, say boosted regression trees (BRT), and random forests (RF). The same code will not work:
 
 ```{r}
 library(randomForest)
@@ -219,13 +247,15 @@ dt_rss(fit.lm)
 
 The "poor man's S3 method" does what it needs to do. However, the cluster of ifelses is more difficult to read, manage, and debug, and is not as elegant and not as modular as a real S3 method.  So let us create an S3 method.
 
-First the S3 method is defined using `UseMethod()`, which creates the building block of an S3 method, the "root", if you will. 
+First define the S3 method with `UseMethod()`
 
 ```{r}
 
 rss <- function(x) UseMethod("rss")
 
 ```
+
+This creates the building block of an S3 method, the "root", if you will. 
 
 Here we have specified that our method will be called `rss`. Now we need to create the special cases of rss - the methods `rss.rpart`, `rss.gbm`, and `rss.randomForest`, where the sections of code after  `rss.` are the classes of object we want them to work on.
 
