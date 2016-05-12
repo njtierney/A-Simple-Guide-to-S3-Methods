@@ -116,7 +116,7 @@ Hiding the trailing text after the `.` avoids the need to use a different `summa
 
 Creating your own S3 method is not particularly difficult and is often highly practical. A use case scenario for creating an S3 method is now discussed.
 
-The Residual Sums of Squares (RSS), $\sum(Y_i - \hat{Y})^2$ is a useful metric for determining model accuracy for continuous outcomes. For example, for a Classification and Regression Tree:
+The Residual Sums of Squares (RSS), $\sum(Y_i - \hat{Y})^2$ is a useful metric for determining model accuracy for continuous outcomes. For example, for a Classification and Regression Tree
 
 ```{r}
 
@@ -129,8 +129,11 @@ fit.rpart <- rpart(Sepal.Width ~ Sepal.Length + Petal.Length + Petal.Width + Spe
 The RSS is calculated as
 
 ```{r}
-sum(residuals(fit.rpart)^2)
+
+print_rss <- sum(residuals(fit.rpart)**2)
+
 ```
+
 
 One might be inclined to write a function to perform this task
 
@@ -138,7 +141,7 @@ One might be inclined to write a function to perform this task
 
 rss <- function(x){
   
-  sum(residuals(x)^2)
+  sum(residuals(x)**2)
   
 }
 
@@ -161,12 +164,13 @@ rss(fit.rf)
 In this case, one could write three functions, one for each decision tree method: "rss_rpart", "rss_brt", and "rss_rf". But to avoid having three functions and instead use just one, one could place all three functions inside of one function, using an if-then-else clause to direct the object of the appropriate class to the appropriate method. This is what I shall call a "Poor man's S3 method".
  
 ```{r}
+
 dt_rss <- function (x){
 
 
 if ("rpart" %in% class(x)) {
   
-  result <- sum((residuals(x)^2))
+  result <- sum((residuals(x)**2))
   
   return(result)
   
@@ -174,7 +178,7 @@ if ("rpart" %in% class(x)) {
 
 else if ("gbm" %in% class(x)) {
   
-  result <- sum(x$residuals^ n2)
+  result <- sum(x$residuals**n2)
   
   return(result)
 
@@ -184,7 +188,7 @@ else if ("randomForest" %in% class(x)) {
 
   temp <- x$y - x$predicted  
   
-  result <- sum(temp^2)  
+  result <- sum(temp**2)  
   
   return(result)
 
@@ -195,7 +199,7 @@ else warning(paste(class(x), "is not of an rpart, gbm, or randomForest object"))
 
 ```
 
-Here it is in action:
+Here it is in action
 
 ```{r}
 
@@ -203,7 +207,7 @@ dt_rss(fit.rpart)
 
 ```
 
-The RSS method works, and if it is applied to a class that is not known, a special message is provided:
+The RSS method works, and if it is applied to a class that is not known, a special message is provided
 
 ```{r}
 
@@ -227,28 +231,23 @@ Here we have specified that our method will be called `rss`. Now we need to crea
 
 ```{r}
 
-# RSS CART
-
 rss.rpart <- function(x){
   
-  sum((residuals(x)^2))
+  sum((residuals(x)**2))
   
 }
-
-# RSS BRT
 
 rss.gbm <- function(x){
   
-  sum(x$residuals^2)
+  sum(x$residuals**2)
  
 }
 
-# RSS RF
 rss.randomForest <- function(x){
 
   res <- x$y - x$predicted  
   
-  sum(res^2)  
+  sum(res**2)  
     
 }
 

@@ -315,7 +315,7 @@ discussed.
 
 The Residual Sums of Squares (RSS), \(\sum(Y_i - \hat{Y})^2\) is a
 useful metric for determining model accuracy for continuous outcomes.
-For example, for a Classification and Regression Tree:
+For example, for a Classification and Regression Tree
 
 \begin{Schunk}
 \begin{Sinput}
@@ -327,31 +327,28 @@ fit.rpart <- rpart(Sepal.Width ~ Sepal.Length + Petal.Length + Petal.Width + Spe
 
 The RSS is calculated as
 
-\textbackslash{}begin\{Schunk\} \textbackslash{}begin\{Sinput\}
-sum(residuals(fit.rpart)\^{}2) \textbackslash{}end\{Sinput\}
-
-\begin{Soutput}
-#> [1] 10.17245
-\end{Soutput}
-
-\textbackslash{}end\{Schunk\}
+\begin{Schunk}
+\begin{Sinput}
+print_rss <- sum(residuals(fit.rpart)**2)
+\end{Sinput}
+\end{Schunk}
 
 One might be inclined to write a function to perform this task
 
-\textbackslash{}begin\{Schunk\} \textbackslash{}begin\{Sinput\} rss
-\textless{}- function(x)\{
+\begin{Schunk}
+\begin{Sinput}
+rss <- function(x){
+  
+  sum(residuals(x)**2)
+  
+}
 
-sum(residuals(x)\^{}2)
-
-\}
-
-rss(fit.rpart) \textbackslash{}end\{Sinput\}
-
+rss(fit.rpart)
+\end{Sinput}
 \begin{Soutput}
 #> [1] 10.17245
 \end{Soutput}
-
-\textbackslash{}end\{Schunk\}
+\end{Schunk}
 
 However, what to do when there are many different decision tree models
 that one would like to compare, say boosted regression trees (BRT), and
@@ -391,7 +388,7 @@ This is what I shall call a ``Poor man's S3 method''.
 
 if (``rpart'' \%in\% class(x)) \{
 
-result \textless{}- sum((residuals(x)\^{}2))
+result \textless{}- sum((residuals(x)**2))
 
 return(result)
 
@@ -399,7 +396,7 @@ return(result)
 
 else if (``gbm'' \%in\% class(x)) \{
 
-result \textless{}- sum(x\$residuals\^{} n2)
+result \textless{}- sum(x\$residuals**n2)
 
 return(result)
 
@@ -409,7 +406,7 @@ else if (``randomForest'' \%in\% class(x)) \{
 
 temp \textless{}- x\(y - x\)predicted
 
-result \textless{}- sum(temp\^{}2)
+result \textless{}- sum(temp**2)
 
 return(result)
 
@@ -419,7 +416,7 @@ else warning(paste(class(x), ``is not of an rpart, gbm, or randomForest
 object'')) \} \textbackslash{}end\{Sinput\}
 \textbackslash{}end\{Schunk\}
 
-Here it is in action:
+Here it is in action
 
 \begin{Schunk}
 \begin{Sinput}
@@ -431,7 +428,7 @@ dt_rss(fit.rpart)
 \end{Schunk}
 
 The RSS method works, and if it is applied to a class that is not known,
-a special message is provided:
+a special message is provided
 
 \begin{Schunk}
 \begin{Sinput}
@@ -465,30 +462,24 @@ we need to create the special cases of rss - the methods
 where the sections of code after \texttt{rss.} are the classes of object
 we want them to work on.
 
-\textbackslash{}begin\{Schunk\} \textbackslash{}begin\{Sinput\} \# RSS
-CART
-
+\textbackslash{}begin\{Schunk\} \textbackslash{}begin\{Sinput\}
 rss.rpart \textless{}- function(x)\{
 
-sum((residuals(x)\^{}2))
+sum((residuals(x)**2))
 
 \}
-
-\section{RSS BRT}\label{rss-brt}
 
 rss.gbm \textless{}- function(x)\{
 
-sum(x\$residuals\^{}2)
+sum(x\$residuals**2)
 
 \}
-
-\section{RSS RF}\label{rss-rf}
 
 rss.randomForest \textless{}- function(x)\{
 
 res \textless{}- x\(y - x\)predicted
 
-sum(res\^{}2)
+sum(res**2)
 
 \} \textbackslash{}end\{Sinput\} \textbackslash{}end\{Schunk\}
 
