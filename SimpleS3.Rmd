@@ -7,7 +7,7 @@ author:
     - Level 8, Y Block, Main Drive, QUT, Brisbane, Australia
     email:  nicholas.tierney@gmail.com
 abstract: >
-  Writing functions in R is an important skill for an R programmer. Many R programmers are adept at creating their own functions, but do not use R's S3 methods. S3 methods allow for functions to be generalised across different classes and are easy to implement, once you know how. This guide is simple and targeted, serving to explain S3 methods so that users can create their own.
+  Writing functions in R is an important skill for anyone using R. S3 methods allow for functions to be generalised across different classes and are easy to implement. Whilst many R users are be adept at creating their own functions, it seems that there is room for many more to take advantage of R's S3 methods. This paper provides a simple and targeted guide to explain what S3 methods are, why people should them, and how they can do it.
 preamble: >
 output: rticles::rjournal_article
 ---
@@ -49,7 +49,7 @@ methods(summary)
 
 ```
 
-There's over 40 different methods!
+There's over 30 different methods!
 
 We can use summary on a linear model, for example:
 
@@ -63,14 +63,14 @@ summary(lm_iris)
 
 `summary` produces a description of the linear model, describing how it was called (`call`), as well as the `residuals`, `coefficients`, `t-values`, `p-values`, $R^2$, and more. This output is **completely** different to the information output from `summary` used for the `iris` dataframe.
 
-So how does the same function, `summary` perform differently for different objects? The answer is that R is sneaky, and _hides_ information. There are in fact, many different `summary` functions. For example:
+So how does the same function, `summary` perform differently for different objects? The answer is that R is helpful, and _hides_ this information. There are in fact, many different `summary` functions. For example:
 
 - `summary.lm`
 - `summary.data.frame`
 - `summary.Date`
 - `summary.matrix`
 
-Being an S3 method, `summary` calls the appropriate function based upon the class of the object it operates on. So using `summary` on an object of class "Date" will evoke the function, `summary.Date`. **But all you need to do is type `summary`**, and the S3 method does the rest.
+Being an S3 method, `summary` calls the appropriate function based upon the class of the object it operates on. So using `summary` on an object of class "Date" will evoke the function, `summary.Date`. **But all you need to do is type `summary`**, and the S3 method does the rest. By abstracting away this detail (the object class), the intent becomes clearer.
 
 To further illustrate, using `summary` on the `iris` data will actually call the function `summary.data.frame`, since `iris` is of class `data.frame`. We can find the class of an object using `class`
 
@@ -87,14 +87,18 @@ summary.data.frame(iris)
 
 ```
 
-which is the same as
+which is the same as `summary(iris)`
+
 
 ```{r}
 
-summary(iris)
+sum1_df <- summary.data.frame(iris)
+
+sum2_df <- summary(iris)
+
+all.equal(sum1_df, sum2_df)
 
 ```
-
 
 And using summary on the linear model object, `lm_iris` performs:
 
@@ -104,11 +108,16 @@ summary.lm(lm_iris)
 
 ```
 
-the same as
+the same as `summary(lm_iris)`
+
 
 ```{r}
 
-summary(lm_iris)
+sum1_lm <- summary.lm(lm_iris)
+
+sum2_lm <- summary(lm_iris)
+
+all.equal(sum1_lm, sum2_lm)
 
 ```
 
@@ -120,7 +129,9 @@ summary.data.frame(lm_iris)
 
 ```
 
-However the output may be a bit confusing.
+However the output may be a bit confusing. 
+
+
 
 To summarize, the important feature of S3 methods worth noting is that only the **first part**, `summary`, is required to be used on these objects of different classes.
 
@@ -189,7 +200,7 @@ rss(fit.rf)
 
 ```
 
-In this case, one could write three functions, one for each decision tree method: "rss_rpart", "rss_brt", and "rss_rf". But to avoid having three functions and instead use just one, one could place all three functions inside of one function, using an if-then-else clause to direct the object of the appropriate class to the appropriate method. This is what I shall call a "Poor man's S3 method".
+In this case, one could write three functions, one for each decision tree method: "rss_rpart", "rss_brt", and "rss_rf". But to avoid having three functions and instead use just one, one could place all three functions inside of one function, using an if-then-else clause to direct the object of the appropriate class to the appropriate method. This shall be referred to as a "Poor man's S3 method".
  
 ```{r}
 
@@ -245,7 +256,10 @@ dt_rss(fit.lm)
 
 ```
 
-The "poor man's S3 method" does what it needs to do. However, the cluster of ifelses is more difficult to read, manage, and debug, and is not as elegant and not as modular as a real S3 method.  So let us create an S3 method.
+The "poor man's S3 method" does what it needs to do.
+However, one must ask how sustainable this would be for an entire programming language? Imagine if a colleague creates a new tree method that needs it's own `rss()`. He will need to convince the maintainer to add his class into your ifelse() chain. Failing this, he could just overwrite the function `rss()`, with predictably disastrous results. In reality, it's probably better to do all of these things with one method. R's S3 methods mean that R developers can utilise a common interface without having to update it when new classes come along. It also means overloading clashes are less likely.
+
+So let us create an S3 method to demonstrate.
 
 First define the S3 method with `UseMethod()`
 
@@ -283,13 +297,16 @@ rss.randomForest <- function(x){
 
 ```
 
-A default method can also be created - `rss.default` - which, as the name suggests, is the default method when other classes are not present.
+A default method can also be created - `rss.default` - which, as the name suggests, is the default method when the argument `x` is not a class that has a specific version of the method defined.
+
 
 ```{r}
 
 rss.default <- function(x, ...){
   
-  warning(paste("RSS does not know how to handle object of class ", class(x), "and can only be used on classes rpart, gbm, and randomForest"))
+  warning(paste("RSS does not know how to handle object of class ", 
+                class(x), 
+                "and can only be used on classes rpart, gbm, and randomForest"))
           
           }
 
@@ -340,6 +357,10 @@ str(x)
 ```
 
 In this case, revealing that x is `numeric`, showing its contents.
+
+> Miles: This raises an interesting question for me about S3 methods.. When functions take multiple arguments.. like plot(), how do you nominate which argument is used to switch the function body based on type? Is it just the first one? Furthermore, do all S3 methods need to have identical arguments? Can lazy dots be used? it looks like they can. SHOULD they be used? 
+
+
 
 # Idea
 
