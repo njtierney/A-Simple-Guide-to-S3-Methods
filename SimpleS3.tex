@@ -1,5 +1,5 @@
 % !TeX root = RJwrapper.tex
-\title{SimpleS3}
+\title{A Simple Guide to S3 Methods}
 \author{by Nicholas Tierney}
 
 \maketitle
@@ -14,30 +14,23 @@ guide to explain what S3 methods are, why people should them, and how
 they can do it.
 }
 
-\section{Note}\label{note}
-
-This file is only a basic article template. For full details of
-\emph{The R Journal} style and information on how to prepare your
-article for submission, see the
-\href{https://journal.r-project.org/share/author-guide.pdf}{Instructions
-for Authors}.
-
 \section{Introduction}\label{introduction}
 
-A standard principle of programming is DRY - Don't Repeat Yourself
-{[}ref{]}. Under this axiom, the copying and pasting of the same or
-similar code (copypasta), is avoided and replaced with a function.
-Having one function to replace several of the same or similar coded
-sections simplifies code maintenance as it means that only one section
-of code needs to be maintained, instead of several. This means that if
-the code breaks, then one simply needs to update the function, rather
-than finding all of the coded sections that are now broken.
+A standard principle of programming is DRY - Don't Repeat Yourself.
+Under this axiom, the copying and pasting of the same or similar code
+(copypasta), is avoided and instead replaced with a function, macro, or
+similar. Having one function to replace several of the same or similar
+coded sections simplifies code maintenance as it means that only one
+section of code needs to be maintained, instead of several. This means
+that if the code breaks, then one simply needs to update the function,
+rather than finding all of the coded sections that are now broken.
 
 S3 methods in the R programming language are a way of writing functions
 in R that do different things for objects of different classes. S3
 methods are so named as the methods shipped with the release of the
 third version of the ``S'' programming language, which R was heavily
-based upon {[}reference{]}. Hence, methods for S 3.0 = S3 Methods.
+based upon (Chambers and Hastie 1992, Team (2016), R Core Team (2012)).
+Hence, methods for S 3.0 = S3 Methods.
 
 The function \texttt{summary()} is an S3 method. When applied to an
 object of class \texttt{data.frame}, \texttt{summary} shows descriptive
@@ -394,14 +387,6 @@ like to compare, say boosted regression trees (BRT), and random forests
 \begin{Schunk}
 \begin{Sinput}
 library(randomForest)
-\end{Sinput}
-\begin{Soutput}
-#> randomForest 4.6-12
-\end{Soutput}
-\begin{Soutput}
-#> Type rfNews() to see new features/changes/bug fixes.
-\end{Soutput}
-\begin{Sinput}
 set.seed(71)
 fit.rf <- randomForest(Sepal.Length ~ ., data=iris, importance=TRUE,
                         proximity=TRUE)
@@ -420,49 +405,47 @@ three functions inside of one function, using an if-then-else clause to
 direct the object of the appropriate class to the appropriate method.
 This shall be referred to as a ``Poor man's S3 method''.
 
-\textbackslash{}begin\{Schunk\} \textbackslash{}begin\{Sinput\} dt\_rss
-\textless{}- function (x)\{
+\begin{verbatim}
+dt_rss <- function (x){
 
-if (``rpart'' \%in\% class(x)) \{
 
-result \textless{}- sum((residuals(x)**2))
+if ("rpart" %in% class(x)) {
+  
+  result <- sum((residuals(x)**2))
+  
+  return(result)
+  
+}
 
-return(result)
+else if ("gbm" %in% class(x)) {
+  
+  result <- sum(x$residuals**n2)
+  
+  return(result)
 
-\}
+}
 
-else if (``gbm'' \%in\% class(x)) \{
+else if ("randomForest" %in% class(x)) {
 
-result \textless{}- sum(x\$residuals**n2)
+  temp <- x$y - x$predicted  
+  
+  result <- sum(temp**2)  
+  
+  return(result)
 
-return(result)
-
-\}
-
-else if (``randomForest'' \%in\% class(x)) \{
-
-temp \textless{}- x\(y - x\)predicted
-
-result \textless{}- sum(temp**2)
-
-return(result)
-
-\}
-
-else warning(paste(class(x), ``is not of an rpart, gbm, or randomForest
-object'')) \} \textbackslash{}end\{Sinput\}
-\textbackslash{}end\{Schunk\}
+}
+  
+else warning(paste(class(x), "is not of an rpart, gbm, or randomForest object"))
+}
+\end{verbatim}
 
 Here it is in action
 
-\begin{Schunk}
-\begin{Sinput}
+\begin{verbatim}
 dt_rss(fit.rpart)
-\end{Sinput}
-\begin{Soutput}
+
 #> [1] 10.17245
-\end{Soutput}
-\end{Schunk}
+\end{verbatim}
 
 The RSS method works, and if it is applied to a class that is not known,
 a special message is provided
@@ -509,26 +492,28 @@ we need to create the special cases of rss - the methods
 where the sections of code after \texttt{rss.} are the classes of object
 we want them to work on.
 
-\textbackslash{}begin\{Schunk\} \textbackslash{}begin\{Sinput\}
-rss.rpart \textless{}- function(x)\{
+\begin{verbatim}
 
-sum((residuals(x)**2))
+rss.rpart <- function(x){
+  
+  sum((residuals(x)**2))
+  
+}
 
-\}
+rss.gbm <- function(x){
+  
+  sum(x$residuals**2)
+ 
+}
 
-rss.gbm \textless{}- function(x)\{
+rss.randomForest <- function(x){
 
-sum(x\$residuals**2)
-
-\}
-
-rss.randomForest \textless{}- function(x)\{
-
-res \textless{}- x\(y - x\)predicted
-
-sum(res**2)
-
-\} \textbackslash{}end\{Sinput\} \textbackslash{}end\{Schunk\}
+  res <- x$y - x$predicted  
+  
+  sum(res**2)  
+    
+}
+\end{verbatim}
 
 A default method can also be created - \texttt{rss.default} - which, as
 the name suggests, is the default method when the argument \texttt{x} is
@@ -575,60 +560,33 @@ rss(lm.fit)
 
 This guide to S3 methods was written to provide R users with the minimal
 amount of information to start building their own S3 methods. For a more
-complete treatment on S3 methods, see \href{}{Advanced-R}, \href{}{R
-Packages}, and \href{}{this blog}, \href{}{this resource}.
+complete treatment on S3 methods, see Advanced-R (Wickham 2014), R
+Packages (Wickham, Hadley 2015), and the official S3 documentation (Team
+2016, R Core Team (2012)).
 
-\section{Extras}\label{extras}
+\section*{References}\label{references}
+\addcontentsline{toc}{section}{References}
 
-For the uninitiated, you may find the class of an object using the
-command, \texttt{class()}, on the object. For example:
+\hypertarget{refs}{}
+\hypertarget{ref-chambers1992}{}
+Chambers, John M, and Trevor J Hastie. 1992. \emph{Statistical Models in
+S}. CRC Press, Inc.
 
-\begin{Schunk}
-\begin{Sinput}
-x <- c(1, 2, 3, 4, 5)
+\hypertarget{ref-R}{}
+R Core Team. 2012. \emph{R: A Language and Environment for Statistical
+Computing}. Vienna, Austria: R Foundation for Statistical Computing.
+\url{http://www.R-project.org/}.
 
-x
-\end{Sinput}
-\begin{Soutput}
-#> [1] 1 2 3 4 5
-\end{Soutput}
-\begin{Sinput}
-class(x)
-\end{Sinput}
-\begin{Soutput}
-#> [1] "numeric"
-\end{Soutput}
-\end{Schunk}
+\hypertarget{ref-rclassmethods}{}
+Team, R Core. 2016. \emph{R: Class Methods}. R Foundation for
+Statistical Computing.
+\url{https://stat.ethz.ch/R-manual/R-devel/library/base/html/UseMethod.html}.
 
-Here, showing that the object \texttt{x} is of class \texttt{numeric}.
+\hypertarget{ref-wickham2014}{}
+Wickham, Hadley. 2014. \emph{Advanced R}. CRC Press.
 
-\texttt{str()} can also provide more information:
-
-\begin{Schunk}
-\begin{Sinput}
-str(x)
-\end{Sinput}
-\begin{Soutput}
-#>  num [1:5] 1 2 3 4 5
-\end{Soutput}
-\end{Schunk}
-
-In this case, revealing that x is \texttt{numeric}, showing its
-contents.
-
-\begin{quote}
-Miles: This raises an interesting question for me about S3 methods..
-When functions take multiple arguments.. like plot(), how do you
-nominate which argument is used to switch the function body based on
-type? Is it just the first one? Furthermore, do all S3 methods need to
-have identical arguments? Can lazy dots be used? it looks like they can.
-SHOULD they be used?
-\end{quote}
-
-\section{Idea}\label{idea}
-
-Idea: Make a cheatsheet / infographic for writing functions in R, and
-for making s3 methods. Let's call it ``The Anatomy of S3 Methods''
+\hypertarget{ref-wickham2015}{}
+Wickham, Hadley. 2015. \emph{R Packages}. O'Reilly Media, Inc.
 
 \address{%
 Nicholas Tierney\\

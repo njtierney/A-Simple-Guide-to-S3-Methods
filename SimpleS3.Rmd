@@ -1,5 +1,5 @@
 ---
-title: SimpleS3
+title: A Simple Guide to S3 Methods
 author:
   - name: Nicholas Tierney
     affiliation: Queensland University of Technology
@@ -10,20 +10,14 @@ abstract: >
   Writing functions in R is an important skill for anyone using R. S3 methods allow for functions to be generalised across different classes and are easy to implement. Whilst many R users are be adept at creating their own functions, it seems that there is room for many more to take advantage of R's S3 methods. This paper provides a simple and targeted guide to explain what S3 methods are, why people should them, and how they can do it.
 preamble: >
 output: rticles::rjournal_article
+bibliography: RJreferences.bib
 ---
-
-# Note
-
-This file is only a basic article template. For full details of _The R Journal_ style and information on how to prepare your article for submission, see the [Instructions for Authors](https://journal.r-project.org/share/author-guide.pdf). 
-
-<!-- \bibliography{RJreferences} -->
 
 # Introduction
 
-A standard principle of programming is DRY - Don't Repeat Yourself [ref]. Under this axiom, the copying and pasting of the same or similar code (copypasta), is avoided and replaced with a function. Having one function to replace several of the same or similar coded sections simplifies code maintenance as it means that only one section of code needs to be maintained, instead of several. This means that if the code breaks, then one simply needs to update the function, rather than finding all of the coded sections that are now broken.
+A standard principle of programming is DRY - Don't Repeat Yourself. Under this axiom, the copying and pasting of the same or similar code (copypasta), is avoided and instead replaced with a function, macro, or similar. Having one function to replace several of the same or similar coded sections simplifies code maintenance as it means that only one section of code needs to be maintained, instead of several. This means that if the code breaks, then one simply needs to update the function, rather than finding all of the coded sections that are now broken.
 
-
-S3 methods in the R programming language are a way of writing functions in R that do different things for objects of different classes. S3 methods are so named as the methods shipped with the release of the third version of the "S" programming language, which R was heavily based upon [reference]. Hence, methods for S 3.0 = S3 Methods.
+S3 methods in the R programming language are a way of writing functions in R that do different things for objects of different classes. S3 methods are so named as the methods shipped with the release of the third version of the "S" programming language, which R was heavily based upon [@chambers1992, @rclassmethods, @R]. Hence, methods for S 3.0 = S3 Methods.
 
 The function `summary()` is an S3 method. When applied to an object of class `data.frame`, `summary` shows descriptive statistics (Mean, SD, etc.) for each variable. For example, `iris` is of class `data.frame`:
 
@@ -190,7 +184,7 @@ rss(fit.rpart)
 
 However, there are many different decision tree models that one would like to compare, say boosted regression trees (BRT), and random forests (RF). The same code will not work:
 
-```{r}
+```{r rf-example, message = FALSE, warning=FALSE}
 library(randomForest)
 set.seed(71)
 fit.rf <- randomForest(Sepal.Length ~ ., data=iris, importance=TRUE,
@@ -201,9 +195,43 @@ rss(fit.rf)
 ```
 
 In this case, one could write three functions, one for each decision tree method: "rss_rpart", "rss_brt", and "rss_rf". But to avoid having three functions and instead use just one, one could place all three functions inside of one function, using an if-then-else clause to direct the object of the appropriate class to the appropriate method. This shall be referred to as a "Poor man's S3 method".
- 
-```{r}
 
+```
+dt_rss <- function (x){
+
+
+if ("rpart" %in% class(x)) {
+  
+  result <- sum((residuals(x)**2))
+  
+  return(result)
+  
+}
+
+else if ("gbm" %in% class(x)) {
+  
+  result <- sum(x$residuals**n2)
+  
+  return(result)
+
+}
+
+else if ("randomForest" %in% class(x)) {
+
+  temp <- x$y - x$predicted  
+  
+  result <- sum(temp**2)  
+  
+  return(result)
+
+}
+  
+else warning(paste(class(x), "is not of an rpart, gbm, or randomForest object"))
+}
+
+```
+
+```{r no-chunk, echo = FALSE, include = FALSE}
 dt_rss <- function (x){
 
 
@@ -240,10 +268,10 @@ else warning(paste(class(x), "is not of an rpart, gbm, or randomForest object"))
 
 Here it is in action
 
-```{r}
-
+```
 dt_rss(fit.rpart)
 
+#> [1] 10.17245
 ```
 
 The RSS method works, and if it is applied to a class that is not known, a special message is provided
@@ -273,7 +301,7 @@ This creates the building block of an S3 method, the "root", if you will.
 
 Here we have specified that our method will be called `rss`. Now we need to create the special cases of rss - the methods `rss.rpart`, `rss.gbm`, and `rss.randomForest`, where the sections of code after  `rss.` are the classes of object we want them to work on.
 
-```{r}
+```
 
 rss.rpart <- function(x){
   
@@ -296,6 +324,32 @@ rss.randomForest <- function(x){
 }
 
 ```
+
+```{r include = FALSE}
+
+rss.rpart <- function(x){
+  
+  sum((residuals(x)**2))
+  
+}
+
+rss.gbm <- function(x){
+  
+  sum(x$residuals**2)
+ 
+}
+
+rss.randomForest <- function(x){
+
+  res <- x$y - x$predicted  
+  
+  sum(res**2)  
+    
+}
+
+```
+
+
 
 A default method can also be created - `rss.default` - which, as the name suggests, is the default method when the argument `x` is not a class that has a specific version of the method defined.
 
@@ -330,38 +384,6 @@ rss(lm.fit)
 
 ```
 
-This guide to S3 methods was written to provide R users with the minimal amount of information to start building their own S3 methods. For a more complete treatment on S3 methods, see [Advanced-R](), [R Packages](), and [this blog](), [this resource]().
+This guide to S3 methods was written to provide R users with the minimal amount of information to start building their own S3 methods. For a more complete treatment on S3 methods, see Advanced-R [ @wickham2014], R Packages [@wickham2015], and the official S3 documentation [ @rclassmethods, @R].
 
-# Extras
-
-For the uninitiated, you may find the class of an object using the command, `class()`, on the object. For example:
-
-```{r}
-
-x <- c(1, 2, 3, 4, 5)
-
-x
-
-class(x)
-
-```
-
-Here, showing that the object `x` is of class `numeric`. 
-
-`str()` can also provide more information:
-
-```{r}
-
-str(x)
-
-```
-
-In this case, revealing that x is `numeric`, showing its contents.
-
-> Miles: This raises an interesting question for me about S3 methods.. When functions take multiple arguments.. like plot(), how do you nominate which argument is used to switch the function body based on type? Is it just the first one? Furthermore, do all S3 methods need to have identical arguments? Can lazy dots be used? it looks like they can. SHOULD they be used? 
-
-
-
-# Idea
-
-Idea: Make a cheatsheet / infographic for writing functions in R, and for making s3 methods. Let's call it "The Anatomy of S3 Methods" 
+# References
